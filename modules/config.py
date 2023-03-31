@@ -5,8 +5,8 @@ import sys
 import json
 
 from modules.presets import BASE_API_URL, CONFIG_FILE_API_URL, CONFIG_FILE_PROXY_URL
-from modules.shared import *
-from modules.utils import change_api_url, change_proxy
+from modules import shared
+# from modules.utils import change_api_url, change_proxy
 
 __all__ = [
     "my_api_key",
@@ -15,6 +15,8 @@ __all__ = [
     "dockerflag",
     "retrieve_proxy",
     "log_level",
+    "my_api_url",
+    "my_proxy_url",
 ]
 
 # 添加一个统一的config文件，避免文件过多造成的疑惑（优先级最低）
@@ -96,7 +98,7 @@ os.environ["HTTPS_PROXY"] = ""
 def retrieve_proxy(proxy=None):
     """
     1, 如果proxy = NONE，设置环境变量，并返回最新设置的代理
-    2，如果proxy ！= NONE，更新当前的代理配置，但是不更新环境变量
+    2, 如果proxy ！= NONE，更新当前的代理配置，但是不更新环境变量
     """
     global http_proxy, https_proxy
     if proxy is not None:
@@ -112,12 +114,25 @@ def retrieve_proxy(proxy=None):
         # return old proxy
         os.environ["HTTP_PROXY"], os.environ["HTTPS_PROXY"] = old_var
 
-# 处理 API url 和API proxy url
+# 处理 API url 和 API proxy url
 my_api_url = BASE_API_URL
 my_proxy_url = ""
 
-# 判断代码中是否修改my_api_url & 读取配置文件中的API地址
-# 如果代码中修改过my_api_url，为了保证代码中填写值得优先级最高，不会再读取文件中的内容
+def change_api_url(url):
+    shared.state.set_base_url(url)
+    msg = f"API地址更改为了{url}"
+    logging.info(msg)
+    return msg
+
+def change_proxy(proxy):
+    retrieve_proxy(proxy)
+    os.environ["HTTPS_PROXY"] = proxy
+    msg = f"代理更改为了{proxy}"
+    logging.info(msg)
+    return msg
+
+## 判断代码中是否修改my_api_url & 读取配置文件中的API地址
+## 如果代码中修改过my_api_url，为了保证代码中填写值得优先级最高，不会再读取文件中的内容
 if my_api_url == BASE_API_URL and os.path.exists(CONFIG_FILE_API_URL):
     with open(CONFIG_FILE_API_URL, mode="r", encoding="utf-8") as f:
         api_url_from_file = f.readline().strip()
