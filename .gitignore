@@ -136,6 +136,6 @@ dmypy.json
 api_key.txt
 api_url.txt
 proxy.txt
-
+config.json
 auth.json
 .idea

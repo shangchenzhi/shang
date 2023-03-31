@@ -24,11 +24,7 @@ from pygments.formatters import HtmlFormatter
 
 from modules.presets import *
 import modules.shared as shared
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-)
+from modules.config import retrieve_proxy
 
 if TYPE_CHECKING:
     from typing import TypedDict
@@ -333,8 +329,7 @@ def reset_textbox():
 
 def reset_default():
     newurl = shared.state.reset()
-    os.environ.pop("HTTPS_PROXY", None)
-    os.environ.pop("https_proxy", None)
+    retrieve_proxy("")
     return gr.update(value=newurl), gr.update(value=""), "API URL 和代理已重置"
 
 
@@ -346,6 +341,7 @@ def change_api_url(url):
 
 
 def change_proxy(proxy):
+    retrieve_proxy(proxy)
     os.environ["HTTPS_PROXY"] = proxy
     msg = f"代理更改为了{proxy}"
     logging.info(msg)
@@ -353,6 +349,8 @@ def change_proxy(proxy):
 
 
 def hide_middle_chars(s):
+    if s is None:
+        return ""
     if len(s) <= 8:
         return s
     else:
@@ -375,8 +373,8 @@ def replace_today(prompt):
 
 
 def get_geoip():
-    response = requests.get("https://ipapi.co/json/", timeout=5)
     try:
+        response = requests.get("https://ipapi.co/json/", timeout=5)
         data = response.json()
     except:
         data = {"error": True, "reason": "连接ipapi失败"}
@@ -384,7 +382,7 @@ def get_geoip():
         logging.warning(f"无法获取IP地址信息。\n{data}")
         if data["reason"] == "RateLimited":
             return (
-                f"获取IP地理位置失败，因为达到了检测IP的速率限制。聊天功能可能仍然可用，但请注意，如果您的IP地址在不受支持的地区，您可能会遇到问题。"
+                f"获取IP地理位置失败，因为达到了检测IP的速率限制。聊天功能可能仍然可用。"
             )
         else:
             return f"获取IP地理位置失败。原因：{data['reason']}。你仍然可以使用聊天功能。"
@@ -441,24 +439,6 @@ def transfer_input(inputs):
     )
 
 
-def get_proxies():
-    # 获取环境变量中的代理设置
-    http_proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
-    https_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
-
-    # 如果存在代理设置，使用它们
-    proxies = {}
-    if http_proxy:
-        logging.info(f"使用 HTTP 代理: {http_proxy}")
-        proxies["http"] = http_proxy
-    if https_proxy:
-        logging.info(f"使用 HTTPS 代理: {https_proxy}")
-        proxies["https"] = https_proxy
-
-    if proxies == {}:
-        proxies = None
-        
-    return proxies
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
@@ -501,3 +481,18 @@ Gradio: {gr.__version__}
  • 
 Commit: {commit_info}
 """
+
+def add_source_numbers(lst, source_name = "Source", use_source = True):
+    if use_source:
+        return [f'[{idx+1}]\t "{item[0]}"\n{source_name}: {item[1]}' for idx, item in enumerate(lst)]
+    else:
+        return [f'[{idx+1}]\t "{item}"' for idx, item in enumerate(lst)]
+
+def add_details(lst):
+    nodes = []
+    for index, txt in enumerate(lst):
+        brief = txt[:25].replace("\n", "")
+        nodes.append(
+            f"<details><summary>{brief}...</summary><p>{txt}</p></details>"
+        )
+    return nodes

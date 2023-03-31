@@ -5,87 +5,12 @@ import sys
 
 import gradio as gr
 
+from modules.config import *
 from modules.utils import *
 from modules.presets import *
 from modules.overwrites import *
 from modules.chat_func import *
 from modules.openai_func import get_usage
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s",
-)
-
-# 在这里输入你的 API 密钥
-my_api_key = ""
-# 在这里输入你的 自定义API地址 
-my_api_url = BASE_API_URL
-# 在这里输入你的 自定义代理地址
-my_proxy_url = ""
-
-# 判断代码中是否修改my_api_url & 读取配置文件中的API地址
-# 如果代码中修改过my_api_url，为了保证代码中填写值得优先级最高，不会再读取文件中的内容
-if my_api_url == BASE_API_URL and os.path.exists(CONFIG_FILE_API_URL):
-    with open(CONFIG_FILE_API_URL, mode="r", encoding="utf-8") as f:
-        api_url_from_file = f.readline().strip()
-
-    # 空值判断
-    if api_url_from_file:
-        my_api_url = api_url_from_file
-
-# 判断my_api_url是否变化，变化则修改自定义API URL
-if my_api_url != BASE_API_URL:
-    change_api_url(my_api_url)
-
-# 判断代码中是否修改my_proxy_url and 读取配置文件中的代理地址
-# 如果代码中修改过my_proxy_url，为了保证代码中填写值得优先级最高，不会再读取文件中的内容
-if (not my_proxy_url.strip()) and os.path.exists(CONFIG_FILE_PROXY_URL):
-    with open(CONFIG_FILE_PROXY_URL, mode="r", encoding="utf-8") as f:
-        proxy_url_from_file = f.readline().strip()
-    
-    # 空值判断
-    if proxy_url_from_file:
-        my_proxy_url = proxy_url_from_file
-
-# 判断my_proxy_url是否填写，填写则修改自定义代理
-if my_proxy_url.strip():
-    change_proxy(my_proxy_url)
-
-# if we are running in Docker
-dockerflag = os.environ.get("dockerrun") == "yes"
-
-authflag = False
-auth_list = []
-
-if dockerflag:
-    my_api_key = os.environ.get("my_api_key")
-    if my_api_key == "empty":
-        logging.error("Please give a api key!")
-        sys.exit(1)
-    # auth
-    username = os.environ.get("USERNAME")
-    password = os.environ.get("PASSWORD")
-    if not (isinstance(username, type(None)) or isinstance(password, type(None))):
-        auth_list.append((os.environ.get("USERNAME"), os.environ.get("PASSWORD")))
-        authflag = True
-else:
-    if (
-        not my_api_key
-        and os.path.exists("api_key.txt")
-        and os.path.getsize("api_key.txt")
-    ):
-        with open("api_key.txt", "r") as f:
-            my_api_key = f.read().strip()
-    if os.path.exists("auth.json"):
-        authflag = True
-        with open("auth.json", "r", encoding='utf-8') as f:
-            auth = json.load(f)
-            for _ in auth:
-                if auth[_]["username"] and auth[_]["password"]:
-                    auth_list.append((auth[_]["username"], auth[_]["password"]))
-                else:
-                    logging.error("请检查auth.json文件中的用户名和密码！")
-                    sys.exit(1)
 
 gr.Chatbot.postprocess = postprocess
 PromptHelper.compact_text_chunks = compact_text_chunks
