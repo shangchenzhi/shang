@@ -70,7 +70,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                     use_streaming_checkbox = gr.Checkbox(
                         label="实时传输回答", value=True, visible=enable_streaming_option
                     )
-                    use_websearch_checkbox = gr.Checkbox(label="使用在线搜索", value=False)
+                    use_websearch_checkbox = gr.Checkbox(label="使用在线搜索", value=True)
                     language_select_dropdown = gr.Dropdown(
                         label="选择回复语言（针对搜索&索引功能）",
                         choices=REPLY_LANGUAGES,
@@ -391,12 +391,13 @@ if __name__ == "__main__":
                 share=False,
                 auth=auth_list,
                 favicon_path="./assets/favicon.ico",
+                server_name="0.0.0.0",
+                server_port=1003,
                 inbrowser=True,
             )
         else:
-            demo.queue(concurrency_count=CONCURRENT_COUNT).launch(
-                share=False, favicon_path="./assets/favicon.ico", inbrowser=True
-            )  # 改为 share=True 可以创建公开分享链接
+            demo.queue().launch(server_name="0.0.0.0", server_port=1002, share=False)  # 可自定义端口
+            
         # demo.queue(concurrency_count=CONCURRENT_COUNT).launch(server_name="0.0.0.0", server_port=7860, share=False) # 可自定义端口
         # demo.queue(concurrency_count=CONCURRENT_COUNT).launch(server_name="0.0.0.0", server_port=7860,auth=("在这里填写用户名", "在这里填写密码")) # 可设置用户名与密码
         # demo.queue(concurrency_count=CONCURRENT_COUNT).launch(auth=("在这里填写用户名", "在这里填写密码")) # 适合Nginx反向代理
